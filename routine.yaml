@@ -1,0 +1,141 @@
+routine_id: adaptive_exercise_session_v1
+name: Adaptive Exercise Session
+version: 1.0
+
+description: >
+  This routine guides a learner through a personalized learning session.
+  The learner provides their name, level, preferences, and goals. The system
+  uses a knowledge graph to identify familiar concepts and gaps, generates
+  constrained exercises, evaluates learner responses, and updates the learner's
+  state after the session.
+
+session:
+  duration_minutes:
+    minimum: 60
+    maximum: 120
+  goal: >
+    Act as a second instructor by guiding the learner without directly giving
+    away answers.
+
+learner_input:
+  required:
+    - learner_name
+    - session_goals
+    - difficulty_level
+  optional:
+    - current_level
+    - learning_preferences
+    - target_concepts
+
+knowledge_graph:
+  purpose: >
+    Represent concepts the learner is familiar with and identify gaps based on
+    known prerequisite relationships.
+  inputs:
+    - learner_profile
+    - target_concepts
+    - prerequisite_graph
+    - prior_progress_state
+  actions:
+    - identify_known_concepts
+    - identify_missing_prerequisites
+    - select_relevant_concepts_for_session
+  outputs:
+    - known_concepts
+    - gap_concepts
+    - recommended_learning_path
+
+teaching_constraints:
+  reveal_final_answer: false
+  reveal_full_solution: false
+  guide_without_giving_away_answers: true
+  require_step_by_step_reasoning: true
+  adapt_to_learner_level: true
+  respect_instructor_goals: true
+
+  constrained_by:
+    - learner_current_level
+    - knowledge_graph
+    - target_concepts
+    - difficulty_level
+    - instructor_goals
+    - session_time_limit
+
+exercise_generator:
+  purpose: >
+    Create exercises tailored to the learner's current level, selected difficulty,
+    preferences, target concepts, and knowledge graph gaps.
+  inputs:
+    - known_concepts
+    - gap_concepts
+    - target_concepts
+    - preferred_difficulty
+    - learning_preferences
+    - instructor_goals
+  actions:
+    - choose_concept_from_knowledge_graph
+    - choose_exercise_difficulty
+    - generate_exercise_prompt
+    - generate_internal_solution_key
+    - generate_hint_sequence
+  constraints:
+    only_use_concepts_in_knowledge_graph: true
+    align_with_selected_goals: true
+    tailor_to_learner_preferences: true
+    avoid_unseen_prerequisites: true
+  outputs:
+    - exercise_prompt
+    - target_concept
+    - difficulty_level
+    - hint_sequence
+    - expected_reasoning_steps
+
+interaction_policy:
+  when_learner_answers_correctly:
+    - acknowledge_progress
+    - briefly_explain_why_reasoning_works
+    - increase_mastery_estimate
+    - offer_next_exercise
+
+  when_learner_answers_incorrectly:
+    - identify_first_error
+    - give_targeted_hint
+    - ask_learner_to_retry
+    - do_not_reveal_final_answer
+
+  when_learner_is_stuck:
+    - ask_diagnostic_question
+    - provide_one_hint_at_a_time
+    - connect_to_prerequisite_concept
+    - ask_for_next_step
+
+evaluation_feedback:
+  purpose: >
+    Evaluate whether each agent output satisfies the teaching constraints and
+    whether the learner is making progress.
+  metrics:
+    - constraint_satisfaction
+    - answer_not_revealed
+    - exercise_matches_level
+    - exercise_matches_knowledge_graph
+    - learner_progress
+    - learner_feedback_score
+  actions:
+    - evaluate_agent_response
+    - evaluate_learner_response
+    - record_constraint_violations
+    - collect_end_of_session_feedback
+  success_target: near_perfect_constraint_satisfaction
+
+update_learner_state:
+  trigger: end_of_session
+  actions:
+    - update_mastered_concepts
+    - update_gap_concepts
+    - update_learning_preferences
+    - record_session_feedback
+    - recommend_next_session_goals
+  outputs:
+    - updated_knowledge_graph
+    - updated_learner_profile
+    - recommended_next_steps
