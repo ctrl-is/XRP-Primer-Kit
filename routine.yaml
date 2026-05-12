@@ -145,15 +145,23 @@ flow:
     - id: present_exercise
       type: tutor_message
       prompt: >
-        Give the learner a simple exercise based on their goals and difficulty level.
+        Give the learner a simple exercise based on their session goals,
+        difficulty level, learning preferences, and target concepts.
         Do not reveal the final answer.
+      next: wait_for_learner_response
+
+    - id: wait_for_learner_response
+      type: learner_input
+      prompt: >
+        Ask the learner to respond to the current exercise or prompt.
       next: evaluate_response
 
     - id: evaluate_response
       type: learner_check
       question: >
-        Evaluate the learner's response to the current exercise.
-        Classify it as correct, incorrect, stuck, or off_topic.
+        Evaluate the learner's response to the current tutor message.
+        Determine whether the learner's response is correct, incorrect,
+        stuck, or off_topic.
       routes:
         correct: correct_feedback
         incorrect: targeted_hint
@@ -163,29 +171,32 @@ flow:
     - id: correct_feedback
       type: tutor_message
       prompt: >
-        Acknowledge the learner's progress and briefly explain why their reasoning works.
-        Do not over-explain or move into a full solution.
+        Acknowledge the learner's progress and briefly explain why their
+        reasoning works. Do not over-explain or reveal unnecessary solution
+        details.
       next: end
 
     - id: targeted_hint
       type: tutor_message
       prompt: >
         Identify the learner's first error and give one targeted hint.
-        Do not reveal the final answer.
-      next: evaluate_response
+        Do not reveal the final answer. Ask the learner to try again.
+      next: wait_for_learner_response
 
     - id: scaffold
       type: tutor_message
       prompt: >
-        Ask a simpler diagnostic question that connects to a prerequisite concept.
-        Give only one hint at a time.
-      next: evaluate_response
+        Ask a simpler diagnostic question that connects to a prerequisite
+        concept. Give only one hint at a time and ask the learner for the
+        next step.
+      next: wait_for_learner_response
 
     - id: redirect
       type: tutor_message
       prompt: >
-        Briefly redirect the learner back to the current exercise.
-      next: evaluate_response
+        Briefly redirect the learner back to the current exercise or concept.
+        Ask them to try responding again.
+      next: wait_for_learner_response
 
     - id: end
       type: end
