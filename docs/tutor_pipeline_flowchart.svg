@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="760" viewBox="0 0 680 760" role="img" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+  <title>Adaptive Tutor Pipeline — Session Flow</title>
+  <desc>Top-down centered flowchart of the LangGraph adaptive tutor pipeline.</desc>
+
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arr-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#3B6D11" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arr-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#854F0B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arr-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#534AB7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <!-- Each node: header band = 36px tall, subtitle row = 28px tall, total box = 64px -->
+  <!-- Nodes: x=190 w=300 center=340. Header top-to-bottom: rect fills top 36px, title at y_top+18. Subtitle at y_top+50. -->
+
+  <!-- START pill -->
+  <rect x="265" y="20" width="150" height="36" rx="18" fill="#D3D1C7" stroke="#888780" stroke-width="0.8"/>
+  <text x="340" y="38" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="600" fill="#2C2C2A">▶  Start</text>
+  <line x1="340" y1="56" x2="340" y2="84" stroke="#94a3b8" stroke-width="1" marker-end="url(#arr)"/>
+
+  <!-- NODE 1: Session Setup (purple) y=86, header 86-122, body 122-150 -->
+  <rect x="190" y="86" width="300" height="64" rx="10" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.8"/>
+  <rect x="190" y="86" width="300" height="36" rx="10" fill="#7F77DD"/>
+  <rect x="190" y="108" width="300" height="14" fill="#7F77DD"/>
+  <text x="340" y="104" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="700" fill="#EEEDFE">📋  Session Setup</text>
+  <text x="340" y="135" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#3C3489">Collect learner profile · load routine.yaml</text>
+  <line x1="340" y1="150" x2="340" y2="178" stroke="#94a3b8" stroke-width="1" marker-end="url(#arr)"/>
+
+  <!-- LOOP CONTAINER y=180 h=320 -->
+  <rect x="80" y="180" width="520" height="320" rx="12" fill="none" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="6 4"/>
+  <rect x="244" y="172" width="192" height="18" rx="9" fill="#f8fafc" stroke="#cbd5e1" stroke-width="0.8"/>
+  <text x="340" y="181" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#64748b" font-weight="500">🔁  LangGraph Loop</text>
+
+  <!-- NODE 2: Tutor Node (teal) y=196 -->
+  <rect x="190" y="196" width="300" height="64" rx="10" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.8"/>
+  <rect x="190" y="196" width="300" height="36" rx="10" fill="#1D9E75"/>
+  <rect x="190" y="218" width="300" height="14" fill="#1D9E75"/>
+  <text x="340" y="214" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="700" fill="#E1F5EE">🤖  Tutor Node</text>
+  <text x="340" y="245" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#085041">Generates tutor message via GPT-4o-mini</text>
+  <line x1="340" y1="260" x2="340" y2="288" stroke="#94a3b8" stroke-width="1" marker-end="url(#arr)"/>
+
+  <!-- NODE 3: Learner Input Node (blue) y=290 -->
+  <rect x="190" y="290" width="300" height="64" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.8"/>
+  <rect x="190" y="290" width="300" height="36" rx="10" fill="#378ADD"/>
+  <rect x="190" y="312" width="300" height="14" fill="#378ADD"/>
+  <text x="340" y="308" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="700" fill="#E6F1FB">🧑‍🎓  Learner Input Node</text>
+  <text x="340" y="339" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#0C447C">Captures learner response</text>
+  <line x1="340" y1="354" x2="340" y2="382" stroke="#94a3b8" stroke-width="1" marker-end="url(#arr)"/>
+
+  <!-- NODE 4: Learner Check Node (amber) y=384 -->
+  <rect x="190" y="384" width="300" height="64" rx="10" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.8"/>
+  <rect x="190" y="384" width="300" height="36" rx="10" fill="#BA7517"/>
+  <rect x="190" y="406" width="300" height="14" fill="#BA7517"/>
+  <text x="340" y="402" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="700" fill="#FAEEDA">🔍  Learner Check Node</text>
+  <text x="340" y="433" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#633806">Classifies response · routes next step</text>
+
+  <!-- ROUTE correct → right arc down to Session End -->
+  <path d="M490 416 L580 416 L580 548 L492 548" fill="none" stroke="#3B6D11" stroke-width="1.2" marker-end="url(#arr-green)"/>
+  <text x="586" y="483" text-anchor="start" dominant-baseline="central" font-size="11" fill="#3B6D11" font-weight="600">✅ correct</text>
+
+  <!-- ROUTE retry → left arc back to Tutor Node -->
+  <path d="M190 416 L100 416 L100 228 L188 228" fill="none" stroke="#854F0B" stroke-width="1.2" stroke-dasharray="5 3" marker-end="url(#arr-amber)"/>
+  <text x="56" y="322" text-anchor="middle" dominant-baseline="central" font-size="10.5" fill="#854F0B" font-weight="600" transform="rotate(-90 56 322)">❌ incorrect · 🤔 stuck · 🔀 off-topic</text>
+
+  <!-- NODE 5: Session End (green) y=520 -->
+  <rect x="190" y="520" width="300" height="64" rx="10" fill="#EAF3DE" stroke="#3B6D11" stroke-width="0.8"/>
+  <rect x="190" y="520" width="300" height="36" rx="10" fill="#639922"/>
+  <rect x="190" y="542" width="300" height="14" fill="#639922"/>
+  <text x="340" y="538" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="700" fill="#EAF3DE">🎉  Session End</text>
+  <text x="340" y="569" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#27500A">Correct answer confirmed · session closes</text>
+
+  <!-- Arrow Session End → Knowledge Graph Update -->
+  <line x1="340" y1="584" x2="340" y2="612" stroke="#534AB7" stroke-width="1.2" stroke-dasharray="5 3" marker-end="url(#arr-purple)"/>
+
+  <!-- NODE 6: Knowledge Graph Update — WIP y=614 -->
+  <rect x="130" y="614" width="420" height="64" rx="10" fill="#EEEDFE" stroke="#7F77DD" stroke-width="1.6" stroke-dasharray="7 3"/>
+  <rect x="130" y="614" width="420" height="36" rx="10" fill="#AFA9EC"/>
+  <rect x="130" y="636" width="420" height="14" fill="#AFA9EC"/>
+  <text x="340" y="632" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="700" fill="#26215C">🚧  Knowledge Graph Update</text>
+  <text x="340" y="663" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#534AB7">Update learner profile · recommend next steps</text>
+  <!-- WIP badge -->
+  <rect x="506" y="606" width="52" height="16" rx="8" fill="#7F77DD"/>
+  <text x="532" y="614" text-anchor="middle" dominant-baseline="central" font-size="10" font-weight="700" fill="#EEEDFE">WIP</text>
+
+  <!-- Arrow to END pill -->
+  <line x1="340" y1="678" x2="340" y2="706" stroke="#94a3b8" stroke-width="1" marker-end="url(#arr)"/>
+
+  <!-- END pill -->
+  <rect x="265" y="708" width="150" height="36" rx="18" fill="#D3D1C7" stroke="#888780" stroke-width="0.8"/>
+  <text x="340" y="726" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="600" fill="#2C2C2A">🏁  End</text>
+
+</svg>
