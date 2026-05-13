@@ -1,5 +1,4 @@
-# XRP-Primer-Kit
-# Adaptive AI Tutoring Routine
+# XRP-Primer-Kit | Adaptive AI Tutoring Routine
 
 This repository contains a terminal-based prototype of an adaptive tutoring agent built with **LangGraph**, a **YAML-defined tutoring routine**, and two LLM calls: one for generating tutor messages and one for classifying learner responses.
 
@@ -166,50 +165,6 @@ This keeps the tutoring policy easier to change without rewriting the graph logi
 
 ---
 
-## Setup
-
-### 1. Clone the repository
-
-```bash
-git clone <your-repo-url>
-cd <your-repo-name>
-```
-
-### 2. Create a virtual environment
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-```
-
-On Windows:
-
-```bash
-.venv\Scripts\activate
-```
-
-### 3. Install dependencies
-
-```bash
-pip install python-dotenv pyyaml langgraph langchain-openrouter
-```
-
-### 4. Add your API key
-
-Create a `.env` file in the root of the repository:
-
-```text
-OPENROUTER_API_KEY=your_api_key_here
-```
-
-### 5. Run the tutoring session
-
-```bash
-python routine_graph.py
-```
-
----
-
 ## Example Session
 
 When the program starts, it asks for:
@@ -291,15 +246,3 @@ Planned extensions include:
 - building a web interface
 - visualizing learner progress over time
 
----
-
-## Project Status
-
-This repository currently demonstrates a working prototype of a YAML-driven LangGraph tutoring loop. The core contribution is the separation between:
-
-```text
-routine.yaml      → defines the tutoring policy and flow
-routine_graph.py  → executes the policy as a LangGraph state machine
-```
-
-The long-term goal is to extend this prototype into an adaptive tutor that can track learner knowledge, respond to mistakes, and act as a reliable second instructor during guided practice.
