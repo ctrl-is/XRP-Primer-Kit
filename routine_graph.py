@@ -6,8 +6,6 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_openrouter import ChatOpenRouter
 
-from neo4j import GraphDatabase
-
 load_dotenv()
 
 # Helper function to load routine.yaml
@@ -28,7 +26,7 @@ classifier_llm = ChatOpenRouter(
     max_tokens=15
 )
 
-# Our TutorState, which inclues the routine, learner and tutor messages, and the history
+# Our TutorState, which inclues the routine, learner and tutor messages, history, etc
 class TutorState(TypedDict):
     routine: Dict[str, Any]
     current_step_id: str
@@ -228,6 +226,60 @@ Only output one label.
             {"role": "system", "content": f"classification: {route}"}]
     }
 
+def check_another_exercise_node(state: TutorState):
+    step = get_current_step(state)
+    prompt = f"""
+You are evaluating a student's response during a tutoring session.
+
+Learner context:
+- Session goals: {state["session_goals"]}
+- Difficulty level: {state["difficulty_level"]}
+- Target concepts: {state["target_concepts"]}
+
+Question:
+{step["question"]}
+
+Most recent tutor message:
+{state["tutor_message"]}
+
+Response:
+{state["learner_message"]}
+
+Classify the response as exactly ONE of the following:
+- yes
+- no
+- unclear
+
+Rules:
+- Use "yes" only if the learner clearly says they would like another question.
+- Use "no" if the learner clearly says they do not want another question.
+- Use "unclear" if you are not able to understand the message or if the response is unrelated to whether they want another exercise.
+
+Only output one label.
+"""
+    raw = classifier_llm.invoke(prompt).content.strip().lower()
+
+    if "yes" in raw:
+        route = "yes"
+    elif "no" in raw:
+        route = "no"
+    else:
+        route = "unclear"
+    
+    # Allows us to see the route the Agent decides to take
+    print(f"\n[route: {route}]")
+
+    next_step_id = step["routes"][route]
+
+    return {
+        "route": route,
+        "current_step_id": next_step_id,
+        "history": state["history"] + [
+            {"role": "learner", "content": state["learner_message"]},
+            {"role": "system", "content": f"continue_exercise_classification: {route}"}]
+    }
+
+
 def route_next_node(state: TutorState):
     """
     Decide which LangGraph node should run next based on the current YAML step.
@@ -253,6 +305,9 @@ def route_next_node(state: TutorState):
     if step["type"] == "learner_input":
         return "learner_input"
     
+    if state["current_step_id"] == "check_another_exercise":
+        return "check_another_exercise"
+    
     if step["type"] == "learner_check":
         return "learner_check"
     
@@ -274,27 +329,32 @@ def build_graph():
     graph.add_node("tutor", tutor_node)
     graph.add_node("learner_input", learner_input_node)
     graph.add_node("learner_check", learner_check_node)
+    graph.add_node("check_another_exercise", check_another_exercise_node)
 
     graph.add_conditional_edges(START,
                                 route_next_node,
                                 {"tutor": "tutor",
                                  "learner_input": "learner_input",
                                  "learner_check": "learner_check",
+                                 "check_another_exercise": "check_another_exercise",
                                  "end": END},
-                                 )
+                                )
     
     graph.add_conditional_edges("tutor",
                                 route_next_node,
                                 {"tutor": "tutor",
                                  "learner_input": "learner_input",
                                  "learner_check": "learner_check",
+                                 "check_another_exercise": "check_another_exercise",
                                  "end": END},
                                 )
+    
     graph.add_conditional_edges("learner_input",
                                 route_next_node,
                                 {"tutor": "tutor",
                                  "learner_input": "learner_input",
                                  "learner_check": "learner_check",
+                                 "check_another_exercise": "check_another_exercise",
                                  "end": END},
                                 )
     
@@ -303,6 +363,16 @@ def build_graph():
                                 {"tutor": "tutor",
                                  "learner_input": "learner_input",
                                  "learner_check": "learner_check",
+                                 "check_another_exercise": "check_another_exercise",
+                                 "end": END},
+                                )
+    
+    graph.add_conditional_edges("check_another_exercise",
+                                route_next_node,
+                                {"tutor": "tutor",
+                                 "learner_input": "learner_input",
+                                 "learner_check": "learner_check",
+                                 "check_another_exercise": "check_another_exercise",
                                  "end": END},
                                 )
     
@@ -371,3 +441,5 @@ def run_interactive_session():
 
     print("\nSession Ended")
 
+if __name__ == "__main__":
+    run_interactive_session()
