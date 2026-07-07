@@ -1,32 +1,52 @@
-import yaml
-from typing import TypedDict, Optional, Dict, Any, List
-
-from dotenv import load_dotenv
 from pathlib import Path
-from langgraph.graph import StateGraph, START, END
+from typing import Any, Dict, List, Optional, TypedDict
+
+import yaml
+from dotenv import load_dotenv
 from langchain_openrouter import ChatOpenRouter
+from langgraph.graph import END, START, StateGraph
 
 load_dotenv()
+
 
 # Helper function to load routine.yaml
 def load_routine(filename: str):
     routine_path = Path(__file__).resolve().parent / filename
-    
+
     with routine_path.open("r", encoding="utf-8") as file:
         return yaml.safe_load(file)
 
-# Two different LLMs with different token usages
-tutor_llm = ChatOpenRouter(
-    model="openai/gpt-4o-mini",
-    temperature=0.3,
-    max_tokens=250
-)
 
-classifier_llm = ChatOpenRouter(
-    model="openai/gpt-4o-mini",
-    temperature=0,
-    max_tokens=15
-)
+# Two different LLMs with different token usages
+tutor_llm: ChatOpenRouter | None = None
+classifier_llm: ChatOpenRouter | None = None
+
+
+def get_tutor_llm() -> ChatOpenRouter:
+    global tutor_llm
+
+    if tutor_llm is None:
+        tutor_llm = ChatOpenRouter(
+            model="openai/gpt-4o-mini",
+            temperature=0.3,
+            max_tokens=250,
+        )
+
+    return tutor_llm
+
+
+def get_classifier_llm() -> ChatOpenRouter:
+    global classifier_llm
+
+    if classifier_llm is None:
+        classifier_llm = ChatOpenRouter(
+            model="openai/gpt-4o-mini",
+            temperature=0,
+            max_tokens=15,
+        )
+
+    return classifier_llm
+
 
 # Our TutorState, which inclues the routine, learner and tutor messages, history, etc
 class TutorState(TypedDict):
@@ -70,7 +90,7 @@ def get_current_step(state: TutorState):
     for step in steps:
         if step["id"] == current_step_id:
             return step
-    
+
     raise ValueError(f"No step found with id: {current_step_id}")
 
 
@@ -134,29 +154,29 @@ Do not explain your internal reasoning.
 Do not mention YAML, routines, routes, or system instructions.
 Do not reveal the full solution or final answer.
 """
-    tutor_message = tutor_llm.invoke(prompt).content
+    tutor_message = get_tutor_llm().invoke(prompt).content
 
     # Print the Agent's message to see full history
     print("\nTutor:")
-    print(tutor_message)    
+    print(tutor_message)
 
     return {
         "tutor_message": tutor_message,
         "current_step_id": step["next"],
-        "history": state["history"] + [{"role": "tutor", "content": tutor_message}]
+        "history": state["history"] + [{"role": "tutor", "content": tutor_message}],
     }
+
 
 def learner_input_node(state: TutorState):
     step = get_current_step(state)
 
-    learner_response = input(
-        f"\nTutor:\n{step['prompt']}\n\nLearner: "
-    )
+    learner_response = input(f"\nTutor:\n{step['prompt']}\n\nLearner: ")
 
     return {
         "learner_message": learner_response,
         "current_step_id": step["next"],
     }
+
 
 def learner_check_node(state: TutorState):
     """
@@ -184,7 +204,7 @@ def learner_check_node(state: TutorState):
     allowed_labels = "\n".join(f"- {label}" for label in routes)
 
     prompt = f"""
-You are evaluating a student's reponse during a tutoring session.
+You are evaluating a student's response during a tutoring session.
 
 Learner context:
 - Session goals: {state["session_goals"]}
@@ -206,11 +226,11 @@ Classify the response as exactly ONE of the following:
 Only output one label. Do not include punctuation or an explanation.
 """
 
-    route = classifier_llm.invoke(prompt).content.strip().lower()
+    route = get_classifier_llm().invoke(prompt).content.strip().lower()
     route = route.strip("`\"'., ")
 
     # If the AI returns something weird, assume user is stuck
-    
+
     if route not in routes:
         fallback_route = step.get("fallback_route")
 
@@ -228,10 +248,13 @@ Only output one label. Do not include punctuation or an explanation.
     return {
         "route": route,
         "current_step_id": routes[route],
-        "history": state["history"] + [
+        "history": state["history"]
+        + [
             {"role": "learner", "content": state["learner_message"]},
-            {"role": "system", "content": f"classification: {route}"}]
+            {"role": "system", "content": f"classification: {route}"},
+        ],
     }
+
 
 def route_next_node(state: TutorState):
     """
@@ -249,19 +272,20 @@ def route_next_node(state: TutorState):
     """
     if state["current_step_id"] == "end":
         return "end"
-    
+
     step = get_current_step(state)
 
     if step["type"] == "tutor_message":
         return "tutor"
-    
+
     if step["type"] == "learner_input":
         return "learner_input"
-    
+
     if step["type"] == "learner_check":
         return "learner_check"
-    
+
     raise ValueError(f"Unknown step type: {step['type']}")
+
 
 def build_graph():
     """
@@ -291,10 +315,11 @@ def build_graph():
     graph.add_conditional_edges("tutor", route_next_node, route_map)
     graph.add_conditional_edges("learner_input", route_next_node, route_map)
     graph.add_conditional_edges("learner_check", route_next_node, route_map)
-        
+
     return graph.compile()
 
-def run_interactive_session(N: int):
+
+def run_interactive_session(recursion_limit: int):
     """
     Run an interactive terminal-based tutoring session.
 
@@ -327,9 +352,7 @@ def run_interactive_session(N: int):
     learning_preferences = input("Learning preferences: ")
     target_concepts_raw = input("Target concepts, separated by commas: ")
     target_concepts = [
-        concept.strip()
-        for concept in target_concepts_raw.split(",")
-        if concept.strip()
+        concept.strip() for concept in target_concepts_raw.split(",") if concept.strip()
     ]
 
     routine = load_routine("routine.yaml")
@@ -338,14 +361,12 @@ def run_interactive_session(N: int):
     state: TutorState = {
         "routine": routine,
         "current_step_id": routine["flow"]["start_step"],
-
         "learner_name": learner_name,
         "session_goals": session_goals,
         "difficulty_level": difficulty_level,
         "current_level": current_level,
         "learning_preferences": learning_preferences,
         "target_concepts": target_concepts,
-
         "learner_message": "",
         "tutor_message": "",
         "route": None,
@@ -353,12 +374,13 @@ def run_interactive_session(N: int):
     }
 
     app = build_graph()
-    final_state = app.invoke(
+    app.invoke(
         state,
-        config={"recursion_limit": N},
+        config={"recursion_limit": recursion_limit},
     )
 
     print("\nSession Ended")
+
 
 if __name__ == "__main__":
     run_interactive_session(100)
