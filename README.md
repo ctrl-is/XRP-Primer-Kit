@@ -1,8 +1,40 @@
-# XRP-Primer-Kit | Adaptive AI Tutoring Routine
+# XRP-Primer-Kit | Adaptive AI Tutoring Routine Prototype
 
-This repository contains a terminal-based prototype of an adaptive tutoring agent built with **LangGraph**, a **YAML-defined tutoring routine**, and two LLM calls: one for generating tutor messages and one for classifying learner responses.
+This repository contains an early terminal-based prototype of an adaptive tutoring agent built with **LangGraph**, a **YAML-defined tutoring routine**, and two LLM calls: one for generating tutor messages and one for classifying learner responses.
 
-The goal is to create a tutor that can guide a learner through an exercise without immediately giving away the answer. The system collects learner context, follows a routine defined in `routine.yaml`, routes through a LangGraph state machine, and adapts its next response based on whether the learner is correct, incorrect, stuck, or off-topic.
+The goal of this prototype is to explore how an AI tutor can guide a learner through an exercise without immediately giving away the answer. The system collects learner context, follows a routine defined in `routine.yaml`, routes through a LangGraph state machine, and adapts its next response based on whether the learner is correct, incorrect, stuck, or off-topic.
+
+This repo should be treated as the **prototype / proof-of-concept version** of the work. The continued implementation work is now happening in:
+
+[Allogy/the-primer](https://github.com/Allogy/the-primer)
+
+---
+
+## Project Status
+
+This repository represents the first working version of the adaptive tutoring routine.
+
+The currently testable runtime is:
+
+```text
+src/routine_graph.py
+src/routine.yaml
+```
+
+The file:
+
+```text
+src/routine_v2.yaml
+```
+
+is included as a **design artifact** for a more flexible future routine. It is useful for documenting the next direction of the tutoring flow, but it should not be treated as the fully runnable or fully tested runtime path.
+
+In other words:
+
+- `routine.yaml` is the current runnable routine.
+- `routine_graph.py` is the current executable LangGraph prototype.
+- `routine_v2.yaml` is a non-runnable design artifact for future iteration.
+- `Allogy/the-primer` is the continuation of this work in a more structured codebase.
 
 ---
 
@@ -26,13 +58,15 @@ Update current_step_id
 Return to route_next_node
         ↓
 Repeat until current_step_id == "end"
+        ↓
+Update Learner Profile at the end of the session
 ```
 
 The most important idea is that **`routine.yaml` defines the tutoring flow**, while **`routine_graph.py` executes that flow through LangGraph**.
 
 ---
 
-## What This Project Does
+## What This Prototype Does
 
 The current prototype supports:
 
@@ -44,6 +78,7 @@ The current prototype supports:
 - routing to the next tutoring step based on the classification
 - maintaining a lightweight conversation history
 - ending the session when the YAML routine reaches the `end` step
+- testing the YAML routing and LangGraph node behavior without live LLM calls
 
 The tutor is designed to act like a second instructor: it gives hints, scaffolds, redirects, and reinforces learning while avoiding direct final-answer reveals.
 
@@ -54,13 +89,24 @@ The tutor is designed to act like a second instructor: it gives hints, scaffolds
 ```text
 .
 ├── README.md
-├── routine_graph.py
-├── routine.yaml
-└── docs/
-    └── tutor_pipeline_flowchart.svg
+├── pyproject.toml
+├── uv.lock
+├── docs/
+│   └── tutor_pipeline_flowchart.svg
+├── src/
+│   ├── __init__.py
+│   ├── routine_graph.py
+│   ├── routine.yaml
+│   └── routine_v2.yaml
+└── tests/
+    └── test_adaptive_tutoring_prototype.py
 ```
 
-### `routine_graph.py`
+---
+
+## Core Files
+
+### `src/routine_graph.py`
 
 This file contains the executable LangGraph workflow.
 
@@ -78,9 +124,9 @@ Important components:
 | `build_graph()` | Builds and compiles the LangGraph state machine. |
 | `run_interactive_session()` | Collects initial learner inputs and starts the tutoring session. |
 
-### `routine.yaml`
+### `src/routine.yaml`
 
-This file defines the tutoring routine and the teaching policy.
+This file defines the current runnable tutoring routine and teaching policy.
 
 It includes:
 
@@ -109,11 +155,29 @@ wait_for_learner_response
         ↓
 evaluate_response
         ↓
-correct      → correct_feedback → end
+correct      → correct_feedback → another_exercise
 incorrect    → targeted_hint    → wait_for_learner_response
 stuck        → scaffold         → wait_for_learner_response
 off_topic    → redirect         → wait_for_learner_response
 ```
+
+The continuation flow then asks whether the learner wants another exercise:
+
+```text
+another_exercise
+        ↓
+check_another_exercise
+        ↓
+yes      → present_exercise
+no       → end
+unclear  → another_exercise
+```
+
+### `src/routine_v2.yaml`
+
+This file is a design artifact for a more flexible future tutoring routine.
+
+It should be read as a planning document for the next version of the system, not as the current tested runtime. The current tests only verify that this file parses as valid YAML. The executable behavior is still centered on `routine_graph.py` and `routine.yaml`.
 
 ---
 
@@ -146,7 +210,7 @@ The evaluator classifies the learner’s latest response into one of four labels
 
 | Label | Meaning | Next Behavior |
 |---|---|---|
-| `correct` | The learner answered the exercise correctly. | Give brief positive feedback and end the current session. |
+| `correct` | The learner answered the exercise correctly. | Give brief positive feedback, then offer another exercise. |
 | `incorrect` | The learner attempted an answer but made an error. | Give one targeted hint and ask them to try again. |
 | `stuck` | The learner is unsure, asks for help, or gives no substantive answer. | Scaffold with a simpler diagnostic question. |
 | `off_topic` | The learner’s response is unrelated to the exercise. | Redirect the learner back to the current exercise. |
@@ -193,6 +257,46 @@ The tutor then generates an exercise, waits for the learner’s answer, classifi
 
 ---
 
+## Running the Prototype
+
+Install dependencies with `uv`:
+
+```bash
+uv sync
+```
+
+Run the interactive prototype:
+
+```bash
+uv run python src/routine_graph.py
+```
+
+The prototype expects the relevant LLM API key configuration to be available in your local environment.
+
+---
+
+## Running Tests
+
+The tests are designed to validate the prototype behavior without making live LLM calls.
+
+Run:
+
+```bash
+uv run pytest -v
+```
+
+The current tests cover:
+
+- loading the runnable routine
+- validating YAML step references
+- checking route targets and fallback routes
+- confirming that `routine_v2.yaml` parses as a design artifact
+- testing route selection for tutor, learner input, learner check, and end states
+- monkeypatching fake tutor/classifier models
+- checking that the LangGraph workflow compiles
+
+---
+
 ## Design Principles
 
 ### YAML-defined tutoring logic
@@ -218,6 +322,18 @@ The tutor is constrained to guide without giving away final answers. It should a
 
 ---
 
+## Relationship to `Allogy/the-primer`
+
+This repository is the earlier XRP Primer Kit prototype.
+
+The continuation of this work is now happening in:
+
+[Allogy/the-primer](https://github.com/Allogy/the-primer)
+
+That repository is intended to be the more structured implementation path, with a cleaner project layout and a broader YAML-driven tutoring engine. This repo remains useful as a compact prototype showing the original LangGraph routine loop and routing logic.
+
+---
+
 ## Current Limitations
 
 This is an early prototype. Some parts of the larger pipeline are currently conceptual rather than fully implemented.
@@ -228,21 +344,18 @@ Current limitations include:
 - learner state is not saved across sessions
 - evaluation metrics are specified conceptually but not logged automatically
 - the interface is terminal-based
-- the current session ends after a correct answer rather than generating multiple exercises in one continuous session
+- `routine_v2.yaml` is not a tested executable routine
+- live tutor behavior still depends on external LLM configuration
+- this repo is not the main continuation repo for the project
 
 ---
 
 ## Future Improvements
 
-Planned extensions include:
+Planned extensions include will all be in the following repository: `Allogy/the-primer`
 
-- implementing a persistent learner knowledge graph
-- updating mastered and gap concepts after each session
-- saving learner progress across multiple sessions
-- adding structured exercise templates
-- logging route decisions and tutor outputs
-- adding tests for YAML routing behavior
-- supporting multiple exercises per session
-- building a web interface
-- visualizing learner progress over time
+---
 
+## License
+
+MIT License.
