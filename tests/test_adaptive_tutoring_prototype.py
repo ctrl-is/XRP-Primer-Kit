@@ -9,7 +9,7 @@ import pytest
 
 # The prototype depends on optional extras (langgraph, langchain-openrouter).
 # Skip the whole module when they are not installed: `uv sync --extra adaptive-tutoring`.
-routine_graph = pytest.importorskip("examples.adaptive_tutoring_prototype.routine_graph")
+routine_graph = pytest.importorskip("src.routine_graph")
 
 
 class FakeLLM:
