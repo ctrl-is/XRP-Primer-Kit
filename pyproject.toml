@@ -1,0 +1,33 @@
+[project]
+name = "xrp-primer-kit"
+version = "0.1.0"
+description = "Terminal prototype for an adaptive AI tutoring routine."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.13,<4.0"
+dependencies = [
+    "langgraph>=1.2.6",
+    "langchain-openrouter>=0.2.4",
+    "pyyaml>=6.0.3",
+    "python-dotenv>=1.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "ruff>=0.15.8",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
